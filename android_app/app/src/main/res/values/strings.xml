@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">LSEC Comunica AR</string>
+    <string name="nav_home">Inicio</string>
+    <string name="nav_sign_to_text">Sordo a Oyente</string>
+    <string name="nav_text_to_sign">Oyente a Sordo</string>
+    <string name="nav_dictionary">Diccionario</string>
+    <string name="nav_settings">Configuración</string>
+    <string name="camera_permission_rational">Se requiere permiso de cámara para el reconocimiento de señas LSEC.</string>
+    <string name="mic_permission_rational">Se requiere permiso de micrófono para transcribir la voz del oyente.</string>
+</resources>
