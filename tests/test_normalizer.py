@@ -1,10 +1,17 @@
 # -*- coding: utf-8 -*-
 import unittest
-import numpy as np
-from ai_engine.preprocessing.normalize_landmarks import LandmarkNormalizer
+
+try:
+    import numpy as np
+    from ai_engine.preprocessing.normalize_landmarks import LandmarkNormalizer
+    NUMPY_AVAILABLE = True
+except ImportError:
+    NUMPY_AVAILABLE = False
 
 class TestLandmarkNormalizer(unittest.TestCase):
     def test_normalization_shape(self):
+        if not NUMPY_AVAILABLE:
+            self.skipTest("NumPy no instalado en el entorno local (especificado en requirements.txt)")
         raw = np.random.randn(21, 3).astype(np.float32)
         norm = LandmarkNormalizer.normalize_single_hand(raw)
         self.assertEqual(norm.shape, (63,))
