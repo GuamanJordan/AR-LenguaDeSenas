@@ -1,0 +1,26 @@
+# -*- coding: utf-8 -*-
+"""Constantes y parámetros para la captura de landmarks e inferencia de red neuronal"""
+
+NUM_HAND_LANDMARKS = 21
+COORDINATES_PER_LANDMARK = 3  # (X, Y, Z)
+INPUT_FEATURES_STATIC = NUM_HAND_LANDMARKS * COORDINATES_PER_LANDMARK  # 63
+MAX_HANDS = 2
+INPUT_FEATURES_DUAL = INPUT_FEATURES_STATIC * MAX_HANDS  # 126
+
+SEQUENCE_LENGTH = 30  # Ventana temporal para señas dinámicas (~1 segundo a 30 FPS)
+CONFIDENCE_THRESHOLD = 0.75
+SMOOTHING_WINDOW_SIZE = 5
+
+CLASSES_STATIC = [
+    "A", "B", "C", "D", "E",
+    "0", "1", "2", "3", "4", "5",
+    "SI", "NO"
+]
+
+CLASSES_DYNAMIC = [
+    "HOLA", "BUENOS_DIAS", "GRACIAS", "POR_FAVOR", "ADIOS",
+    "AYUDA", "BANIO", "NECESITO", "PROFESOR", "CLASE", "ENTENDER", "NO_ENTIENDO"
+]
+
+ALL_CLASSES = CLASSES_STATIC + CLASSES_DYNAMIC
+NUM_CLASSES = len(ALL_CLASSES)
