@@ -29,6 +29,7 @@ class LsecGlossMapper:
         'muchas': 'MUCHO',
         'mucho': 'MUCHO',
         'por favor': 'POR-FAVOR',
+        'favor': 'POR-FAVOR',
         'adios': 'CHAO',
         'chao': 'CHAO',
         'ayuda': 'AYUDAR',
@@ -48,6 +49,7 @@ class LsecGlossMapper:
         'no': 'NO',
         'como estas': 'COMO TU',
         'donde': 'DONDE',
+        'esta': 'ESTAR',
         'universidad': 'UNIVERSIDAD',
         'espe': 'UNIVERSIDAD ESPE'
     }
