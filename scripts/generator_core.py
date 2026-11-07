@@ -19,3 +19,4 @@ def save(path, content):
         f.write(content.strip() + "\n")
 
 print("Preparando generación masiva y estructurada de commits...")
+

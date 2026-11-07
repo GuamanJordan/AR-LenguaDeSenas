@@ -18,3 +18,4 @@ def write_f(path, content):
         f.write(content.strip() + "\n")
 
 print("Generando proyecto y commits...")
+

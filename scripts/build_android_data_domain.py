@@ -822,3 +822,4 @@ for c_msg in granular_domain_commits:
     commit(c_msg)
 
 print("--- Módulo 3 completado exitosamente con ~45 commits adicionales ---")
+

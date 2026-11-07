@@ -28,3 +28,4 @@ def write_file(path, content):
         f.write(content.strip() + "\n")
 
 print("Iniciando generador de arquitectura y commits...")
+
