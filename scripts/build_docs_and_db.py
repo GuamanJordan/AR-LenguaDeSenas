@@ -457,3 +457,4 @@ for c_msg in granular_db_commits:
     commit(c_msg)
 
 print("--- Módulo 1 completado exitosamente con ~35 commits ---")
+
