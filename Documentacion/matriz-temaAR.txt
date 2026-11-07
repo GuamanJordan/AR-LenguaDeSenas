@@ -1,0 +1,3 @@
+Guaman	Grupo 3	Sistema de Comunicación Bidireccional en Lengua de Señas Ecuatoriana	Aplicación móvil que reconoce señas mediante la cámara y las convierte en texto. También permite ingresar palabras o expresiones para representarlas mediante un avatar 3D en realidad aumentada, facilitando la comunicación entre personas sordas y oyentes.	Unity, C#, AR Foundation, ARCore, MediaPipe, Python y Blender.	RA
+Mariscal					
+Rea					

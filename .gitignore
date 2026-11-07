@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Data & Models (large weights)
+*.h5
+*.keras
+*.tar.gz
+*.zip
+dataset_tools/data/raw_videos/
+
+# Unity / Android
+[Yy]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+*.apk
+*.aab
+*.unitypackage
+.gradle/
+local.properties
+
+# OS & IDE
+.vscode/
+.idea/
+*.suo
+*.user
+*.userprefs
+.DS_Store
+Thumbs.db
