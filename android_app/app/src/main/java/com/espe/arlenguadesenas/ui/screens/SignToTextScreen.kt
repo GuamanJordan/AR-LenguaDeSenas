@@ -227,7 +227,6 @@ fun SignToTextScreen(
                 AccessibleButton(
                     text = "Pronunciar en voz alta (TTS)",
                     contentDescription = "Leer traducción por el altavoz",
-                    icon = Icons.Default.VolumeUp,
                     onClick = { onSpeakResult(detectedGloss) }
                 )
             }

@@ -137,10 +137,10 @@ fun TextToSignArScreen(onBack: () -> Unit) {
         ) {
             AvatarControlsBar(
                 isPlaying = isPlaying,
-                playbackSpeed = speed,
-                onPlayPauseToggle = { isPlaying = !isPlaying },
-                onSpeedChange = { newSpeed -> speed = newSpeed },
-                onResetPose = { activeGloss = "HOLA" }
+                currentSpeed = speed,
+                onTogglePlay = { isPlaying = !isPlaying },
+                onRepeat = { activeGloss = activeGloss },
+                onSpeedChange = { newSpeed -> speed = newSpeed }
             )
 
             SpeechInputBar(
@@ -149,6 +149,7 @@ fun TextToSignArScreen(onBack: () -> Unit) {
                         activeGloss = text.uppercase()
                     }
                 },
+                onStartVoice = { /* Dictado por voz */ },
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
         }
