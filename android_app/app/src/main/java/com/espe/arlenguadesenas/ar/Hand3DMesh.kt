@@ -4,10 +4,13 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.nio.ShortBuffer
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
- * Geometría 3D de la mano anatómica para renderizado OpenGL ES 2.0.
- * Construye vértices, normales y caras para la palma y los 5 dedos con articulaciones.
+ * Malla 3D anatómica y orgánica de la mano humana para OpenGL ES 2.0.
+ * Utiliza cilindros radiales suavizados con interpolación de normales (Gouraud/Phong),
+ * ahusamiento natural de falanges, yemas redondeadas y curvatura metacarpiana.
  */
 class Hand3DMesh {
 
@@ -21,55 +24,71 @@ class Hand3DMesh {
         val normalList = mutableListOf<Float>()
         val indexList = mutableListOf<Short>()
 
-        // 1. Crear cuboide de la Palma (Palm)
-        addBox(
-            center = floatArrayOf(0f, -0.1f, 0f),
-            size = floatArrayOf(0.7f, 0.75f, 0.16f),
+        // 1. Palma de la mano anatómica (Contorno suave hexagonal con arco metacarpiano)
+        addSmoothPalm(vertexList, normalList, indexList)
+
+        // 2. Muñeca / Antebrazo (Cilindro elíptico suave)
+        addSmoothCylinder(
+            baseCenter = floatArrayOf(0f, -0.65f, -0.02f),
+            topCenter = floatArrayOf(0f, -0.28f, -0.02f),
+            radiusBaseX = 0.22f, radiusBaseZ = 0.12f,
+            radiusTopX = 0.24f, radiusTopZ = 0.13f,
+            segments = 12, vList = vertexList, nList = normalList, iList = indexList
+        )
+
+        // 3. Pulgar (Thumb) - En ángulo opositor natural (adelantado y rotado 35°)
+        addFinger(
+            root = floatArrayOf(-0.25f, -0.15f, 0.08f),
+            p1 = floatArrayOf(-0.38f, 0.05f, 0.12f),
+            p2 = floatArrayOf(-0.46f, 0.28f, 0.14f),
+            tip = floatArrayOf(-0.52f, 0.48f, 0.15f),
+            r1 = 0.095f, r2 = 0.085f, r3 = 0.075f,
             vertexList, normalList, indexList
         )
 
-        // 2. Muñeca / Base
-        addBox(
-            center = floatArrayOf(0f, -0.6f, 0f),
-            size = floatArrayOf(0.5f, 0.35f, 0.18f),
+        // 4. Dedo Índice (Index) - 3 falanges ahusadas
+        addFinger(
+            root = floatArrayOf(-0.19f, 0.30f, 0.01f),
+            p1 = floatArrayOf(-0.20f, 0.58f, 0.01f),
+            p2 = floatArrayOf(-0.20f, 0.84f, 0.01f),
+            tip = floatArrayOf(-0.20f, 1.06f, 0.01f),
+            r1 = 0.080f, r2 = 0.072f, r3 = 0.062f,
             vertexList, normalList, indexList
         )
 
-        // 3. Pulgar (Thumb) - 2 falanges en diagonal
-        addBox(
-            center = floatArrayOf(-0.45f, -0.05f, 0.05f),
-            size = floatArrayOf(0.18f, 0.35f, 0.14f),
+        // 5. Dedo Medio (Middle) - Más largo, punto culminante del arco
+        addFinger(
+            root = floatArrayOf(-0.01f, 0.33f, 0.02f),
+            p1 = floatArrayOf(-0.01f, 0.64f, 0.02f),
+            p2 = floatArrayOf(-0.01f, 0.92f, 0.02f),
+            tip = floatArrayOf(-0.01f, 1.18f, 0.02f),
+            r1 = 0.084f, r2 = 0.075f, r3 = 0.065f,
             vertexList, normalList, indexList
         )
-        addBox(
-            center = floatArrayOf(-0.55f, 0.25f, 0.08f),
-            size = floatArrayOf(0.16f, 0.32f, 0.13f),
+
+        // 6. Dedo Anular (Ring) - Longitud intermedia
+        addFinger(
+            root = floatArrayOf(0.17f, 0.29f, 0.01f),
+            p1 = floatArrayOf(0.18f, 0.58f, 0.01f),
+            p2 = floatArrayOf(0.18f, 0.83f, 0.01f),
+            tip = floatArrayOf(0.18f, 1.05f, 0.01f),
+            r1 = 0.078f, r2 = 0.070f, r3 = 0.060f,
             vertexList, normalList, indexList
         )
 
-        // 4. Dedo Índice (Index) - 3 falanges
-        addBox(center = floatArrayOf(-0.25f, 0.42f, 0f), size = floatArrayOf(0.15f, 0.32f, 0.13f), vertexList, normalList, indexList)
-        addBox(center = floatArrayOf(-0.25f, 0.75f, 0f), size = floatArrayOf(0.14f, 0.30f, 0.12f), vertexList, normalList, indexList)
-        addBox(center = floatArrayOf(-0.25f, 1.05f, 0f), size = floatArrayOf(0.13f, 0.26f, 0.11f), vertexList, normalList, indexList)
-
-        // 5. Dedo Medio (Middle) - 3 falanges
-        addBox(center = floatArrayOf(-0.02f, 0.45f, 0f), size = floatArrayOf(0.16f, 0.35f, 0.13f), vertexList, normalList, indexList)
-        addBox(center = floatArrayOf(-0.02f, 0.82f, 0f), size = floatArrayOf(0.15f, 0.34f, 0.12f), vertexList, normalList, indexList)
-        addBox(center = floatArrayOf(-0.02f, 1.15f, 0f), size = floatArrayOf(0.14f, 0.28f, 0.11f), vertexList, normalList, indexList)
-
-        // 6. Dedo Anular (Ring) - 3 falanges
-        addBox(center = floatArrayOf(0.20f, 0.42f, 0f), size = floatArrayOf(0.15f, 0.32f, 0.13f), vertexList, normalList, indexList)
-        addBox(center = floatArrayOf(0.20f, 0.75f, 0f), size = floatArrayOf(0.14f, 0.30f, 0.12f), vertexList, normalList, indexList)
-        addBox(center = floatArrayOf(0.20f, 1.04f, 0f), size = floatArrayOf(0.13f, 0.25f, 0.11f), vertexList, normalList, indexList)
-
-        // 7. Dedo Meñique (Pinky) - 3 falanges
-        addBox(center = floatArrayOf(0.40f, 0.35f, 0f), size = floatArrayOf(0.14f, 0.28f, 0.12f), vertexList, normalList, indexList)
-        addBox(center = floatArrayOf(0.40f, 0.63f, 0f), size = floatArrayOf(0.13f, 0.26f, 0.11f), vertexList, normalList, indexList)
-        addBox(center = floatArrayOf(0.40f, 0.88f, 0f), size = floatArrayOf(0.12f, 0.22f, 0.10f), vertexList, normalList, indexList)
+        // 7. Dedo Meñique (Pinky) - Más delgado y proporcionado
+        addFinger(
+            root = floatArrayOf(0.32f, 0.23f, -0.01f),
+            p1 = floatArrayOf(0.34f, 0.47f, -0.01f),
+            p2 = floatArrayOf(0.35f, 0.69f, -0.01f),
+            tip = floatArrayOf(0.35f, 0.88f, -0.01f),
+            r1 = 0.068f, r2 = 0.060f, r3 = 0.052f,
+            vertexList, normalList, indexList
+        )
 
         indexCount = indexList.size
 
-        // Buffers nativos directos
+        // Buffers nativos directos para alto rendimiento en GPU
         vertexBuffer = ByteBuffer.allocateDirect(vertexList.size * 4).run {
             order(ByteOrder.nativeOrder())
             asFloatBuffer().apply {
@@ -95,71 +114,170 @@ class Hand3DMesh {
         }
     }
 
-    private fun addBox(
-        center: FloatArray,
-        size: FloatArray,
-        vList: MutableList<Float>,
-        nList: MutableList<Float>,
-        iList: MutableList<Short>
+    /**
+     * Construye un dedo humano completo con 3 falanges cilíndricas redondeadas y yema semiesférica.
+     */
+    private fun addFinger(
+        root: FloatArray, p1: FloatArray, p2: FloatArray, tip: FloatArray,
+        r1: Float, r2: Float, r3: Float,
+        vList: MutableList<Float>, nList: MutableList<Float>, iList: MutableList<Short>
     ) {
-        val hx = size[0] / 2f
-        val hy = size[1] / 2f
-        val hz = size[2] / 2f
-        val cx = center[0]
-        val cy = center[1]
-        val cz = center[2]
+        // Falange proximal
+        addSmoothCylinder(root, p1, r1, r1, r2, r2, 10, vList, nList, iList)
+        // Falange media
+        addSmoothCylinder(p1, p2, r2, r2, r3, r3, 10, vList, nList, iList)
+        // Falange distal con punta redondeada
+        addSmoothCylinder(p2, tip, r3, r3, r3 * 0.7f, r3 * 0.7f, 10, vList, nList, iList)
+        // Cúpula / Yema esférica
+        addDome(tip, r3 * 0.75f, vList, nList, iList)
+    }
 
+    /**
+     * Palma anatómica con relieve de eminencia tenar e hipotenar.
+     */
+    private fun addSmoothPalm(
+        vList: MutableList<Float>, nList: MutableList<Float>, iList: MutableList<Short>
+    ) {
         val baseIndex = (vList.size / 3).toShort()
 
-        // 24 vertices (4 por cada una de las 6 caras para normales planas nítidas)
-        val faceNormals = arrayOf(
-            floatArrayOf(0f, 0f, 1f),   // Frente
-            floatArrayOf(0f, 0f, -1f),  // Atrás
-            floatArrayOf(0f, 1f, 0f),   // Arriba
-            floatArrayOf(0f, -1f, 0f),  // Abajo
-            floatArrayOf(1f, 0f, 0f),   // Derecha
-            floatArrayOf(-1f, 0f, 0f)   // Izquierda
+        // Vértices clave de la silueta de la palma humana (cara anterior y posterior)
+        val palmPointsFront = arrayOf(
+            floatArrayOf(-0.24f, -0.28f, 0.08f), // Muñeca izquierda
+            floatArrayOf(0.24f, -0.28f, 0.06f),  // Muñeca derecha
+            floatArrayOf(0.35f, 0.22f, 0.05f),   // Nudillo meñique
+            floatArrayOf(0.18f, 0.29f, 0.07f),   // Nudillo anular
+            floatArrayOf(-0.01f, 0.33f, 0.08f),  // Nudillo medio
+            floatArrayOf(-0.19f, 0.30f, 0.07f),  // Nudillo índice
+            floatArrayOf(-0.35f, -0.05f, 0.10f)  // Monte de Venus / Tenar pulgar
         )
 
-        val faceVertices = arrayOf(
-            // Frente
-            floatArrayOf(cx - hx, cy - hy, cz + hz, cx + hx, cy - hy, cz + hz, cx + hx, cy + hy, cz + hz, cx - hx, cy + hy, cz + hz),
-            // Atrás
-            floatArrayOf(cx + hx, cy - hy, cz - hz, cx - hx, cy - hy, cz - hz, cx - hx, cy + hy, cz - hz, cx + hx, cy + hy, cz - hz),
-            // Arriba
-            floatArrayOf(cx - hx, cy + hy, cz + hz, cx + hx, cy + hy, cz + hz, cx + hx, cy + hy, cz - hz, cx - hx, cy + hy, cz - hz),
-            // Abajo
-            floatArrayOf(cx - hx, cy - hy, cz - hz, cx + hx, cy - hy, cz - hz, cx + hx, cy - hy, cz + hz, cx - hx, cy - hy, cz + hz),
-            // Derecha
-            floatArrayOf(cx + hx, cy - hy, cz + hz, cx + hx, cy - hy, cz - hz, cx + hx, cy + hy, cz - hz, cx + hx, cy + hy, cz + hz),
-            // Izquierda
-            floatArrayOf(cx - hx, cy - hy, cz - hz, cx - hx, cy - hy, cz + hz, cx - hx, cy + hy, cz + hz, cx - hx, cy + hy, cz - hz)
+        val palmPointsBack = arrayOf(
+            floatArrayOf(-0.24f, -0.28f, -0.08f),
+            floatArrayOf(0.24f, -0.28f, -0.06f),
+            floatArrayOf(0.35f, 0.22f, -0.05f),
+            floatArrayOf(0.18f, 0.29f, -0.07f),
+            floatArrayOf(-0.01f, 0.33f, -0.08f),
+            floatArrayOf(-0.19f, 0.30f, -0.07f),
+            floatArrayOf(-0.35f, -0.05f, -0.08f)
         )
 
-        for (face in 0 until 6) {
-            val normal = faceNormals[face]
-            val fVerts = faceVertices[face]
-            val fBase = (baseIndex + face * 4).toShort()
+        // Cara anterior (Palma)
+        val centerFront = floatArrayOf(-0.02f, 0.0f, 0.09f)
+        vList.addAll(listOf(centerFront[0], centerFront[1], centerFront[2]))
+        nList.addAll(listOf(0f, 0f, 1f))
 
-            for (v in 0 until 4) {
-                vList.add(fVerts[v * 3])
-                vList.add(fVerts[v * 3 + 1])
-                vList.add(fVerts[v * 3 + 2])
+        for (pt in palmPointsFront) {
+            vList.addAll(listOf(pt[0], pt[1], pt[2]))
+            nList.addAll(listOf(0f, 0f, 1f))
+        }
 
-                nList.add(normal[0])
-                nList.add(normal[1])
-                nList.add(normal[2])
-            }
+        val n = palmPointsFront.size
+        for (i in 0 until n) {
+            iList.add(baseIndex)
+            iList.add((baseIndex + 1 + i).toShort())
+            iList.add((baseIndex + 1 + (i + 1) % n).toShort())
+        }
 
-            // 2 triángulos por cara
-            iList.add(fBase)
-            iList.add((fBase + 1).toShort())
-            iList.add((fBase + 2).toShort())
+        // Cara posterior (Dorso)
+        val baseIndexBack = (vList.size / 3).toShort()
+        val centerBack = floatArrayOf(-0.02f, 0.0f, -0.08f)
+        vList.addAll(listOf(centerBack[0], centerBack[1], centerBack[2]))
+        nList.addAll(listOf(0f, 0f, -1f))
 
-            iList.add(fBase)
-            iList.add((fBase + 2).toShort())
-            iList.add((fBase + 3).toShort())
+        for (pt in palmPointsBack) {
+            vList.addAll(listOf(pt[0], pt[1], pt[2]))
+            nList.addAll(listOf(0f, 0f, -1f))
+        }
+
+        for (i in 0 until n) {
+            iList.add(baseIndexBack)
+            iList.add((baseIndexBack + 1 + (i + 1) % n).toShort())
+            iList.add((baseIndexBack + 1 + i).toShort())
+        }
+
+        // Laterales de unión entre frente y dorso
+        for (i in 0 until n) {
+            val iNext = (i + 1) % n
+            val f1 = (baseIndex + 1 + i).toShort()
+            val f2 = (baseIndex + 1 + iNext).toShort()
+            val b1 = (baseIndexBack + 1 + i).toShort()
+            val b2 = (baseIndexBack + 1 + iNext).toShort()
+
+            iList.add(f1); iList.add(b1); iList.add(f2)
+            iList.add(f2); iList.add(b1); iList.add(b2)
+        }
+    }
+
+    /**
+     * Genera un cilindro suavizado con radio elíptico y normales continuas para aspecto orgánico.
+     */
+    private fun addSmoothCylinder(
+        baseCenter: FloatArray, topCenter: FloatArray,
+        radiusBaseX: Float, radiusBaseZ: Float,
+        radiusTopX: Float, radiusTopZ: Float,
+        segments: Int,
+        vList: MutableList<Float>, nList: MutableList<Float>, iList: MutableList<Short>
+    ) {
+        val baseIdx = (vList.size / 3).toShort()
+        val step = (2.0 * Math.PI / segments).toFloat()
+
+        for (i in 0..segments) {
+            val angle = i * step
+            val cosA = cos(angle)
+            val sinA = sin(angle)
+
+            // Vértice base
+            vList.add(baseCenter[0] + radiusBaseX * cosA)
+            vList.add(baseCenter[1])
+            vList.add(baseCenter[2] + radiusBaseZ * sinA)
+            nList.add(cosA); nList.add(0f); nList.add(sinA)
+
+            // Vértice superior
+            vList.add(topCenter[0] + radiusTopX * cosA)
+            vList.add(topCenter[1])
+            vList.add(topCenter[2] + radiusTopZ * sinA)
+            nList.add(cosA); nList.add(0f); nList.add(sinA)
+        }
+
+        for (i in 0 until segments) {
+            val v0 = (baseIdx + i * 2).toShort()
+            val v1 = (baseIdx + i * 2 + 1).toShort()
+            val v2 = (baseIdx + (i + 1) * 2).toShort()
+            val v3 = (baseIdx + (i + 1) * 2 + 1).toShort()
+
+            iList.add(v0); iList.add(v1); iList.add(v2)
+            iList.add(v2); iList.add(v1); iList.add(v3)
+        }
+    }
+
+    /**
+     * Yema del dedo semiesférica para evitar puntas cuadradas.
+     */
+    private fun addDome(
+        center: FloatArray, radius: Float,
+        vList: MutableList<Float>, nList: MutableList<Float>, iList: MutableList<Short>
+    ) {
+        val baseIdx = (vList.size / 3).toShort()
+        vList.add(center[0]); vList.add(center[1] + radius); vList.add(center[2])
+        nList.add(0f); nList.add(1f); nList.add(0f)
+
+        val segs = 8
+        for (i in 0 until segs) {
+            val angle = (i * 2.0 * Math.PI / segs).toFloat()
+            val cosA = cos(angle)
+            val sinA = sin(angle)
+
+            vList.add(center[0] + radius * 0.85f * cosA)
+            vList.add(center[1])
+            vList.add(center[2] + radius * 0.85f * sinA)
+            nList.add(cosA * 0.7f); nList.add(0.7f); nList.add(sinA * 0.7f)
+        }
+
+        for (i in 0 until segs) {
+            val iNext = (i + 1) % segs
+            iList.add(baseIdx)
+            iList.add((baseIdx + 1 + i).toShort())
+            iList.add((baseIdx + 1 + iNext).toShort())
         }
     }
 }
-
