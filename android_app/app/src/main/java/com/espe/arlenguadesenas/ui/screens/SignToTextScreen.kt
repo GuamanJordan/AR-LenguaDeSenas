@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Cameraswitch
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
@@ -33,8 +34,10 @@ import com.espe.arlenguadesenas.ui.components.AccessibleButton
 import com.espe.arlenguadesenas.ui.components.CameraPreview
 import com.espe.arlenguadesenas.ui.components.ConfidenceBadge
 import com.espe.arlenguadesenas.ui.components.HandSkeletonOverlay
+import com.espe.arlenguadesenas.ui.components.LsecTrainingStudioSheet
 import com.espe.arlenguadesenas.ui.components.RecognitionOverlay
 import com.espe.arlenguadesenas.vision.HandLandmarkerHelper
+import com.espe.arlenguadesenas.vision.LsecTrainingManager
 import com.espe.arlenguadesenas.vision.TemporalVotingBuffer
 
 /**
@@ -72,6 +75,7 @@ fun SignToTextScreen(
 
     var useFrontCamera by remember { mutableStateOf(false) }
     var isTestModeActive by remember { mutableStateOf(false) }
+    var isTrainingStudioOpen by remember { mutableStateOf(false) }
     var detectedGloss by remember { mutableStateOf("MUESTRE SU MANO A LA CÁMARA") }
     var confidence by remember { mutableStateOf(0.85f) }
     var currentLandmarks by remember { mutableStateOf(FloatArray(63)) }
@@ -110,6 +114,12 @@ fun SignToTextScreen(
                 confidence = prob
                 android.util.Log.i("LSEC_BUFFER", "Seña Final: '$smoothed' (Certeza: ${(prob * 100).toInt()}%)")
             }
+        }
+    }
+
+    val trainingManager = remember(context, handAnalyzer) {
+        LsecTrainingManager(context, handAnalyzer.neuralClassifier).also {
+            handAnalyzer.trainingManager = it
         }
     }
 
@@ -161,7 +171,33 @@ fun SignToTextScreen(
                         )
                     }
 
-                    // Botón para Activar Modo de Prueba / Calibración
+                    // Botón para Abrir Estudio de Entrenamiento y Calibración Guiado (5 Segundos)
+                    Surface(
+                        color = Color(0xFF00C853),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.clickable { isTrainingStudioOpen = true }
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.School,
+                                contentDescription = "Modo Entrenar",
+                                tint = Color.Black,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Entrenar (5s)",
+                                color = Color.Black,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    // Botón para Activar Modo de Prueba Rápido
                     Surface(
                         color = if (isTestModeActive) MaterialTheme.colorScheme.primary else Color(0xCC10121A),
                         shape = RoundedCornerShape(16.dp),
@@ -169,7 +205,7 @@ fun SignToTextScreen(
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                         ) {
                             Icon(
                                 Icons.Default.Science,
@@ -177,9 +213,9 @@ fun SignToTextScreen(
                                 tint = Color.White,
                                 modifier = Modifier.size(16.dp)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = if (isTestModeActive) "Modo Test Activo" else "🧪 Modo Test",
+                                text = if (isTestModeActive) "Test ON" else "🧪 Test",
                                 color = Color.White,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
@@ -356,6 +392,15 @@ fun SignToTextScreen(
                     onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) }
                 )
             }
+        }
+
+        // Modal de Calibración y Entrenamiento Guiado (5 Segundos)
+        if (isTrainingStudioOpen) {
+            LsecTrainingStudioSheet(
+                trainingManager = trainingManager,
+                isHandDetected = isHandPresent,
+                onDismiss = { isTrainingStudioOpen = false }
+            )
         }
     }
 }
