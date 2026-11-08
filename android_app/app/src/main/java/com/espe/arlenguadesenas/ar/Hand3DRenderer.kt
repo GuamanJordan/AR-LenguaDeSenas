@@ -211,9 +211,9 @@ class Hand3DRenderer : GLSurfaceView.Renderer {
 
             // 4. BUENAS NOCHES (LSEC): Cobertura envolvente hacia abajo (noche)
             upper.contains("BUENAS NOCHES") || upper.contains("NOCHES") -> {
-                val cycle = (sin(t.toDouble() * 2.4)).toFloat()
-                val dipY = -Math.abs(cycle) * 0.20f
-                val foldX = (cycle * 22.0).toFloat()
+                val cycle = sin(t.toDouble() * 2.4).toFloat()
+                val dipY = -abs(cycle) * 0.20f
+                val foldX = (cycle * 24.0).toFloat()
                 Matrix.translateM(matrix, 0, 0f, dipY, 0f)
                 Matrix.rotateM(matrix, 0, foldX, 1f, 0f, 0f)
             }
