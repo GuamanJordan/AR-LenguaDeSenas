@@ -29,6 +29,7 @@ class HandLandmarkerHelper(
 
     private var handLandmarker: HandLandmarker? = null
     private var isInitialized = false
+    private val neuralClassifier = LsecNeuralClassifier(context)
 
     private var lastAnalyzedTimeMs = 0L
     private val minFrameIntervalMs = 50L // ~20 FPS: óptimo para capturar transiciones de video
@@ -115,10 +116,17 @@ class HandLandmarkerHelper(
                     prevWristY = hand1[1]
                     prevTimestamp = currentTime
 
-                    val (predictedSign, confidence) = if (hand2 != null) {
-                        classifyBimanualLsec(hand1, hand2)
+                    // Clasificación híbrida: 1) Red Neuronal Entrenada LSEC (Deep Learning)
+                    // 2) Fallback al clasificador cinemático geométrico
+                    val (predictedSign, confidence) = if (neuralClassifier.isModelLoaded) {
+                        val (nnSign, nnProb) = neuralClassifier.predict(hand1, hand2)
+                        if (nnProb >= 0.70f) {
+                            Pair(nnSign, nnProb)
+                        } else {
+                            if (hand2 != null) classifyBimanualLsec(hand1, hand2) else classifySingleHandLsec(hand1, velocityX, velocityY)
+                        }
                     } else {
-                        classifySingleHandLsec(hand1, velocityX, velocityY)
+                        if (hand2 != null) classifyBimanualLsec(hand1, hand2) else classifySingleHandLsec(hand1, velocityX, velocityY)
                     }
 
                     onResult(hand1, predictedSign, confidence, timestamp)
