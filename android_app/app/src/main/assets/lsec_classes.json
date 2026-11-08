@@ -1,0 +1,19 @@
+{
+  "classes": [
+    "HOLA",
+    "BUENOS DÍAS",
+    "BUENAS TARDES",
+    "BUENAS NOCHES",
+    "CHAO",
+    "¿CÓMO ESTÁS?",
+    "MUCHO GUSTO",
+    "GRACIAS",
+    "POR FAVOR",
+    "DE NADA",
+    "AYUDA",
+    "SÍ",
+    "NO",
+    "TE QUIERO"
+  ],
+  "num_classes": 14
+}
