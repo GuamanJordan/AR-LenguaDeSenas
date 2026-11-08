@@ -45,9 +45,12 @@ class TemporalVotingBuffer(private val windowSize: Int = 6) {
             }
         }
 
-        // Histéresis: se requiere que al menos la mitad de la ventana coincida para cambiar de seña
+        // Histéresis: se requiere consenso y se priorizan las señas léxicas sobre etiquetas genéricas
         val consensusThreshold = (windowSize / 2).coerceAtLeast(2)
-        if (maxCount >= consensusThreshold && topLabel != "SEÑA LSEC EN CURSO") {
+        val isGeneric = topLabel.contains("SEÑA LSEC") || topLabel.contains("ACERQUE")
+        if (maxCount >= consensusThreshold && !isGeneric) {
+            lastStableLabel = topLabel
+        } else if (lastStableLabel.contains("MUESTRE") && !isGeneric) {
             lastStableLabel = topLabel
         }
 
