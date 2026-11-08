@@ -19,14 +19,35 @@ import com.espe.arlenguadesenas.ui.components.ArViewContainer
 import com.espe.arlenguadesenas.ui.components.AvatarControlsBar
 import com.espe.arlenguadesenas.ui.components.SpeechInputBar
 
+/**
+ * Pantalla de Texto/Voz a Señas 3D (LSEC).
+ * Presenta un modelo anatómico de mano humana en 3D con rotación 360°,
+ * zoom táctil, y reproducción cinemática de los saludos oficiales ecuatorianos (GioSEÑAS / CONADIS).
+ */
 @Composable
 fun TextToSignArScreen(onBack: () -> Unit) {
     var activeGloss by remember { mutableStateOf("HOLA") }
     var isPlaying by remember { mutableStateOf(true) }
     var speed by remember { mutableStateOf(1.0f) }
 
-    val quickSigns = remember {
-        listOf("HOLA", "GRACIAS", "POR-FAVOR", "AYUDA", "SI", "NO", "LETRA A", "LETRA B", "NÚMERO 1", "NÚMERO 2")
+    // Saludos y expresiones oficiales de la Lengua de Señas Ecuatoriana (GioSEÑAS - CONADIS)
+    val ecuadorianGreetings = remember {
+        listOf(
+            "HOLA",
+            "BUENOS DÍAS",
+            "BUENAS TARDES",
+            "BUENAS NOCHES",
+            "CHAO",
+            "¿CÓMO ESTÁS?",
+            "MUCHO GUSTO",
+            "GRACIAS",
+            "POR FAVOR",
+            "DE NADA",
+            "AYUDA",
+            "SÍ",
+            "NO",
+            "TE QUIERO"
+        )
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -38,12 +59,13 @@ fun TextToSignArScreen(onBack: () -> Unit) {
             modifier = Modifier.fillMaxSize()
         )
 
-        // 2. Barra Superior Estilizada y Compacta con Botón de Regreso
+        // 2. Barra Superior Estilizada y Compacta con Botón de Regreso al Menú Principal
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
                 .background(Color(0xEE12141A))
+                .statusBarsPadding()
                 .padding(top = 8.dp, bottom = 6.dp, start = 8.dp, end = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -79,33 +101,20 @@ fun TextToSignArScreen(onBack: () -> Unit) {
                 }
             }
 
-            AvatarControlsBar(
-                isPlaying = isPlaying,
-                currentSpeed = speed,
-                onTogglePlay = { isPlaying = !isPlaying },
-                onRepeat = {
-                    isPlaying = false
-                    isPlaying = true
-                },
-                onSpeedChange = { speed = it }
-            )
-
-            // Atajos de señas rápidas
+            // Carrusel de Saludos Ecuatorianos LSEC (GioSEÑAS)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState())
                     .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                quickSigns.forEach { sign ->
+                ecuadorianGreetings.forEach { sign ->
+                    val isSelected = sign.equals(activeGloss, ignoreCase = true)
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (activeGloss == sign) MaterialTheme.colorScheme.primary else Color(0x22FFFFFF),
-                        modifier = Modifier.clickable {
-                            activeGloss = sign
-                            isPlaying = true
-                        }
+                        shape = RoundedCornerShape(16.dp),
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color(0x33FFFFFF),
+                        modifier = Modifier.clickable { activeGloss = sign }
                     ) {
                         Text(
                             text = sign,
@@ -118,25 +127,30 @@ fun TextToSignArScreen(onBack: () -> Unit) {
             }
         }
 
-        // 3. Barra Inferior de Entrada (Dictado por Voz y Escritura)
-        SpeechInputBar(
-            onSendText = { text ->
-                val clean = text.trim().uppercase()
-                activeGloss = when {
-                    clean.contains("HOLA") || clean.contains("BUENOS") -> "HOLA"
-                    clean.contains("GRACIAS") -> "GRACIAS"
-                    clean.contains("FAVOR") -> "POR-FAVOR"
-                    clean.contains("AYUDA") -> "AYUDA"
-                    clean.contains("SI") || clean.contains("SÍ") -> "SI"
-                    clean.contains("NO") -> "NO"
-                    else -> clean
-                }
-                isPlaying = true
-            },
-            onStartVoice = {
-                // Entrada por voz activa
-            },
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
+        // 3. Controles Inferiores: Velocidad, Pausa/Play y Barra de Entrada de Texto/Voz
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .navigationBarsPadding()
+                .padding(bottom = 12.dp)
+        ) {
+            AvatarControlsBar(
+                isPlaying = isPlaying,
+                playbackSpeed = speed,
+                onPlayPauseToggle = { isPlaying = !isPlaying },
+                onSpeedChange = { newSpeed -> speed = newSpeed },
+                onResetPose = { activeGloss = "HOLA" }
+            )
+
+            SpeechInputBar(
+                onSendText = { text ->
+                    if (text.isNotBlank()) {
+                        activeGloss = text.uppercase()
+                    }
+                },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+        }
     }
 }
