@@ -2,6 +2,7 @@ package com.espe.arlenguadesenas.ui
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
 import com.espe.arlenguadesenas.speech.TextToSpeechHelper
@@ -20,6 +21,11 @@ class MainActivity : ComponentActivity() {
             ARLenguaDeSenasTheme {
                 var currentScreen by remember { mutableStateOf("home") }
 
+                // Manejar botón físico/gesto de retroceso del teléfono
+                BackHandler(enabled = currentScreen != "home") {
+                    currentScreen = "home"
+                }
+
                 when (currentScreen) {
                     "home" -> HomeScreen(
                         onNavigateToSignToText = { currentScreen = "sign_to_text" },
@@ -27,10 +33,15 @@ class MainActivity : ComponentActivity() {
                         onNavigateToDictionary = { currentScreen = "dictionary" }
                     )
                     "sign_to_text" -> SignToTextScreen(
+                        onBack = { currentScreen = "home" },
                         onSpeakResult = { text -> ttsHelper.speak(text) }
                     )
-                    "text_to_sign" -> TextToSignArScreen()
-                    "dictionary" -> DictionaryScreen()
+                    "text_to_sign" -> TextToSignArScreen(
+                        onBack = { currentScreen = "home" }
+                    )
+                    "dictionary" -> DictionaryScreen(
+                        onBack = { currentScreen = "home" }
+                    )
                 }
             }
         }
