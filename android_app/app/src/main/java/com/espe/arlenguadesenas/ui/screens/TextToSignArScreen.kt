@@ -6,9 +6,9 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,7 +20,7 @@ import com.espe.arlenguadesenas.ui.components.AvatarControlsBar
 import com.espe.arlenguadesenas.ui.components.SpeechInputBar
 
 @Composable
-fun TextToSignArScreen() {
+fun TextToSignArScreen(onBack: () -> Unit) {
     var activeGloss by remember { mutableStateOf("HOLA") }
     var isPlaying by remember { mutableStateOf(true) }
     var speed by remember { mutableStateOf(1.0f) }
@@ -38,13 +38,13 @@ fun TextToSignArScreen() {
             modifier = Modifier.fillMaxSize()
         )
 
-        // 2. Barra Superior Estilizada y Compacta
+        // 2. Barra Superior Estilizada y Compacta con Botón de Regreso
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
                 .background(Color(0xEE12141A))
-                .padding(top = 10.dp, bottom = 6.dp, start = 12.dp, end = 12.dp),
+                .padding(top = 8.dp, bottom = 6.dp, start = 8.dp, end = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
@@ -52,11 +52,20 @@ fun TextToSignArScreen() {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Mano 3D: $activeGloss",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color(0xFFFFCC80) // Tono cálido acorde a piel humana
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Regresar al menú principal",
+                            tint = Color.White
+                        )
+                    }
+                    Text(
+                        text = "Mano 3D: $activeGloss",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color(0xFFFFCC80)
+                    )
+                }
                 Surface(
                     color = Color(0x33FFFFFF),
                     shape = RoundedCornerShape(12.dp)
