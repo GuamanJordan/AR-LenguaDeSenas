@@ -164,6 +164,8 @@ class LsecNeuralClassifier(context: Context) {
             }
         }
 
-        return Pair(classes[topIdx], maxProb)
+        val predicted = classes[topIdx]
+        android.util.Log.d("LSEC_NN", "Top Class: '$predicted' | Prob: ${(maxProb * 100).toInt()}%")
+        return Pair(predicted, maxProb)
     }
 }

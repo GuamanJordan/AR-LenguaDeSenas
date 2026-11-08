@@ -118,9 +118,11 @@ class HandLandmarkerHelper(
 
                     // Clasificación híbrida: 1) Red Neuronal Entrenada LSEC (Deep Learning)
                     // 2) Fallback al clasificador cinemático geométrico
+                    var isNeuralMatch = false
                     val (predictedSign, confidence) = if (neuralClassifier.isModelLoaded) {
                         val (nnSign, nnProb) = neuralClassifier.predict(hand1, hand2)
-                        if (nnProb >= 0.70f) {
+                        if (nnProb >= 0.65f) {
+                            isNeuralMatch = true
                             Pair(nnSign, nnProb)
                         } else {
                             if (hand2 != null) classifyBimanualLsec(hand1, hand2) else classifySingleHandLsec(hand1, velocityX, velocityY)
@@ -129,8 +131,15 @@ class HandLandmarkerHelper(
                         if (hand2 != null) classifyBimanualLsec(hand1, hand2) else classifySingleHandLsec(hand1, velocityX, velocityY)
                     }
 
+                    val elapsedMs = System.currentTimeMillis() - currentTime
+                    android.util.Log.i(
+                        "LSEC_VISION",
+                        "[*] MANOS: $handsCount | SEÑA: '$predictedSign' | CERTEZA: ${(confidence * 100).toInt()}% | MOTOR: ${if (isNeuralMatch) "RED NEURONAL" else "CINEMÁTICO"} | LATENCIA: ${elapsedMs}ms"
+                    )
+
                     onResult(hand1, predictedSign, confidence, timestamp)
                 } else {
+                    android.util.Log.d("LSEC_VISION", "[-] BUSCANDO MANO EN EL ENCUADRE...")
                     onResult(FloatArray(63), "BUSCANDO MANO...", 0.40f, timestamp)
                 }
             } else {

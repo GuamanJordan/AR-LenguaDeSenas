@@ -94,3 +94,4 @@ def test_inference_on_user_photos():
 
 if __name__ == '__main__':
     test_inference_on_user_photos()
+

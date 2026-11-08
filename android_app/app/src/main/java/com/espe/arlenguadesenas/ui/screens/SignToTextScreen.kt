@@ -108,6 +108,7 @@ fun SignToTextScreen(
                 val smoothed = votingBuffer.addPrediction(predictedSign)
                 detectedGloss = smoothed
                 confidence = prob
+                android.util.Log.i("LSEC_BUFFER", "Seña Final: '$smoothed' (Certeza: ${(prob * 100).toInt()}%)")
             }
         }
     }
