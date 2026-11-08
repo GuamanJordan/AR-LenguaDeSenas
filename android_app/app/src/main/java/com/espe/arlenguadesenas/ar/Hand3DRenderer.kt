@@ -5,6 +5,7 @@ import android.opengl.GLSurfaceView
 import android.opengl.Matrix
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -198,14 +199,14 @@ class Hand3DRenderer : GLSurfaceView.Renderer {
                 Matrix.rotateM(matrix, 0, tiltZ, 0f, 0f, 1f)
             }
 
-            // 3. BUENAS TARDES (LSEC): Descenso suave en ángulo diagonal (atardecer)
+            // 3. BUENAS TARDES (LSEC): Descenso suave en ángulo diagonal (atardecer sobre el horizonte)
             upper.contains("BUENAS TARDES") || upper.contains("TARDES") -> {
-                val cycle = (sin(t.toDouble() * 2.6)).toFloat()
-                val moveX = cycle * 0.18f
-                val moveY = -Math.abs(cycle) * 0.16f
-                val incline = (sin(t.toDouble() * 2.6) * 14.0).toFloat()
+                val cycle = sin(t.toDouble() * 2.5).toFloat()
+                val moveX = cycle * 0.20f
+                val moveY = -abs(cycle) * 0.20f
+                val incline = 16.0f + (cycle * 14.0).toFloat()
                 Matrix.translateM(matrix, 0, moveX, moveY, 0f)
-                Matrix.rotateM(matrix, 0, incline, 1f, 0f, 0.5f)
+                Matrix.rotateM(matrix, 0, incline, 1f, 0f, 0.4f)
             }
 
             // 4. BUENAS NOCHES (LSEC): Cobertura envolvente hacia abajo (noche)
