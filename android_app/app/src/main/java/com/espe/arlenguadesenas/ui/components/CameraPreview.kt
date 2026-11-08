@@ -29,11 +29,54 @@ fun CameraPreview(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
+    var previewViewRef by remember { mutableStateOf<PreviewView?>(null) }
 
     DisposableEffect(Unit) {
         onDispose {
             cameraExecutor.shutdown()
         }
+    }
+
+    LaunchedEffect(useFrontCamera, previewViewRef, lifecycleOwner) {
+        val previewView = previewViewRef ?: return@LaunchedEffect
+        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+        cameraProviderFuture.addListener({
+            try {
+                val cameraProvider = cameraProviderFuture.get()
+
+                val preview = Preview.Builder().build().also {
+                    it.setSurfaceProvider(previewView.surfaceProvider)
+                }
+
+                val cameraSelector = if (useFrontCamera) {
+                    CameraSelector.DEFAULT_FRONT_CAMERA
+                } else {
+                    CameraSelector.DEFAULT_BACK_CAMERA
+                }
+
+                // Resolución optimizada a 480x640: ideal para MediaPipe Tasks sin sobrecargar CPU
+                val imageAnalysis = ImageAnalysis.Builder()
+                    .setTargetResolution(Size(480, 640))
+                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
+                    .build()
+
+                analyzer?.let {
+                    imageAnalysis.setAnalyzer(cameraExecutor, it)
+                }
+
+                cameraProvider.unbindAll()
+                cameraProvider.bindToLifecycle(
+                    lifecycleOwner,
+                    cameraSelector,
+                    preview,
+                    imageAnalysis
+                )
+                android.util.Log.i("CameraPreview", "Camera bound successfully to lifecycle without stuttering")
+            } catch (e: Exception) {
+                android.util.Log.e("CameraPreview", "Error binding camera", e)
+            }
+        }, ContextCompat.getMainExecutor(context))
     }
 
     AndroidView(
@@ -42,46 +85,9 @@ fun CameraPreview(
             PreviewView(ctx).apply {
                 scaleType = PreviewView.ScaleType.FILL_CENTER
                 implementationMode = PreviewView.ImplementationMode.PERFORMANCE
+                previewViewRef = this
             }
         },
-        update = { previewView ->
-            val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-            cameraProviderFuture.addListener({
-                try {
-                    val cameraProvider = cameraProviderFuture.get()
-
-                    val preview = Preview.Builder().build().also {
-                        it.setSurfaceProvider(previewView.surfaceProvider)
-                    }
-
-                    val cameraSelector = if (useFrontCamera) {
-                        CameraSelector.DEFAULT_FRONT_CAMERA
-                    } else {
-                        CameraSelector.DEFAULT_BACK_CAMERA
-                    }
-
-                    // Resolución optimizada a 480x640: ideal para MediaPipe Tasks sin sobrecargar CPU
-                    val imageAnalysis = ImageAnalysis.Builder()
-                        .setTargetResolution(Size(480, 640))
-                        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                        .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
-                        .build()
-
-                    analyzer?.let {
-                        imageAnalysis.setAnalyzer(cameraExecutor, it)
-                    }
-
-                    cameraProvider.unbindAll()
-                    cameraProvider.bindToLifecycle(
-                        lifecycleOwner,
-                        cameraSelector,
-                        preview,
-                        imageAnalysis
-                    )
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }, ContextCompat.getMainExecutor(context))
-        }
+        update = { /* Estable: no rebind en cada recomposición */ }
     )
 }
