@@ -21,7 +21,7 @@ import com.espe.arlenguadesenas.ui.components.AccessibleButton
 import com.espe.arlenguadesenas.ui.components.CameraPreview
 import com.espe.arlenguadesenas.ui.components.ConfidenceBadge
 import com.espe.arlenguadesenas.ui.components.RecognitionOverlay
-import com.espe.arlenguadesenas.vision.TFLiteClassifier
+import com.espe.arlenguadesenas.vision.HandLandmarkerHelper
 import com.espe.arlenguadesenas.vision.TemporalVotingBuffer
 
 @Composable
@@ -45,30 +45,34 @@ fun SignToTextScreen(onSpeakResult: (String) -> Unit) {
         }
     }
 
-    var useFrontCamera by remember { mutableStateOf(false) } // Trasera por defecto para apuntar a la persona
-    var detectedGloss by remember { mutableStateOf("DETECTANDO...") }
-    var confidence by remember { mutableStateOf(0.88f) }
+    var useFrontCamera by remember { mutableStateOf(false) } // Trasera para enfocar al interlocutor
+    var detectedGloss by remember { mutableStateOf("MUESTRE SU MANO A LA CÁMARA") }
+    var confidence by remember { mutableStateOf(0.85f) }
 
-    val classifier = remember { TFLiteClassifier(context) }
-    val votingBuffer = remember { TemporalVotingBuffer(windowSize = 5) }
+    val votingBuffer = remember { TemporalVotingBuffer(windowSize = 4) }
+
+    val handAnalyzer = remember(context) {
+        HandLandmarkerHelper(context) { _, predictedSign, prob, _ ->
+            if (prob > 0.65f) {
+                val smoothed = votingBuffer.addPrediction(predictedSign)
+                detectedGloss = smoothed
+                confidence = prob
+            }
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (hasCameraPermission) {
-            // Vista de Cámara Real CameraX
+            // Vista de Cámara Real analizada con MediaPipe
             CameraPreview(
                 useFrontCamera = useFrontCamera,
-                onFrameAnalyzed = { rawLandmarks ->
-                    val (label, prob) = classifier.classify(rawLandmarks)
-                    val smoothLabel = votingBuffer.addPrediction(label)
-                    detectedGloss = smoothLabel
-                    confidence = prob
-                }
+                analyzer = handAnalyzer
             )
 
             // Retícula de encuadre
-            RecognitionOverlay(isHandDetected = true)
+            RecognitionOverlay(isHandDetected = confidence > 0.70f)
 
-            // Botón para alternar entre Cámara Frontal y Trasera
+            // Botón para alternar cámara Frontal / Trasera
             IconButton(
                 onClick = { useFrontCamera = !useFrontCamera },
                 modifier = Modifier
@@ -83,19 +87,19 @@ fun SignToTextScreen(onSpeakResult: (String) -> Unit) {
                 )
             }
 
-            // Panel inferior con resultado de la seña y botón TTS
+            // Panel inferior con resultado en tiempo real y lectura TTS
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .background(Color(0xCC000000))
+                    .background(Color(0xDD000000))
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 ConfidenceBadge(confidence = confidence)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Seña detectada: $detectedGloss",
+                    text = detectedGloss,
                     style = MaterialTheme.typography.titleLarge,
                     color = Color.White
                 )
@@ -107,7 +111,6 @@ fun SignToTextScreen(onSpeakResult: (String) -> Unit) {
                 )
             }
         } else {
-            // Pantalla informativa si no tiene permisos
             Column(
                 modifier = Modifier
                     .fillMaxSize()
