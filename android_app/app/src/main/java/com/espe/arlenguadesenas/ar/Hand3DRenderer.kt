@@ -5,11 +5,13 @@ import android.opengl.GLSurfaceView
 import android.opengl.Matrix
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * Renderizador OpenGL ES 2.0 con sombreado de tono de piel humana (Subsurface Scattering wrap light)
- * y control orbital 360° para visualización de señas LSEC.
+ * Renderizador OpenGL ES 2.0 con sombreado de tono de piel humana (Subsurface Scattering wrap light),
+ * control orbital 360° y animación cinemática para el vocabulario oficial de la
+ * Lengua de Señas Ecuatoriana (LSEC - GioSEÑAS y Diccionario Gabriel Román CONADIS).
  */
 class Hand3DRenderer : GLSurfaceView.Renderer {
 
@@ -143,7 +145,7 @@ class Hand3DRenderer : GLSurfaceView.Renderer {
         Matrix.rotateM(modelMatrix, 0, rotationX, 1f, 0f, 0f)
         Matrix.rotateM(modelMatrix, 0, rotationY, 0f, 1f, 0f)
 
-        // 2. Animación fluida de la seña LSEC
+        // 2. Animación fluida de la seña LSEC correspondiente
         applyHumanSignAnimation(modelMatrix, activeGloss, animationTime)
 
         // Calcular MVP
@@ -171,46 +173,123 @@ class Hand3DRenderer : GLSurfaceView.Renderer {
         GLES20.glDisableVertexAttribArray(aNormalHandle)
     }
 
+    /**
+     * Aplica cinemática y transformaciones anatómicas según la seña de LSEC ecuatoriana.
+     * Replicación de las señas enseñadas en el video de GioSEÑAS y CONADIS.
+     */
     private fun applyHumanSignAnimation(matrix: FloatArray, gloss: String, t: Float) {
         val upper = gloss.uppercase().trim()
         when {
+            // 1. HOLA (LSEC): Saludo frontal oscilante
             upper.contains("HOLA") || upper.contains("SALUDO") -> {
-                // Seña HOLA: Saludo ondeando con la palma abierta
                 val waveZ = (sin(t.toDouble() * 4.2) * 18.0).toFloat()
                 val waveY = (sin(t.toDouble() * 4.2) * 6.0).toFloat()
                 Matrix.rotateM(matrix, 0, waveZ, 0f, 0f, 1f)
                 Matrix.rotateM(matrix, 0, waveY, 0f, 1f, 0f)
             }
+
+            // 2. BUENOS DÍAS (LSEC): Mano que emerge del pecho y asciende suavemente (amanecer)
+            upper.contains("BUENOS DÍAS") || upper.contains("BUENO DIA") || upper.contains("DIAS") -> {
+                val cycle = (sin(t.toDouble() * 2.8)).toFloat()
+                val riseY = cycle * 0.22f
+                val riseX = cycle * 0.15f
+                val tiltZ = cycle * 12.0f
+                Matrix.translateM(matrix, 0, riseX, riseY, 0f)
+                Matrix.rotateM(matrix, 0, tiltZ, 0f, 0f, 1f)
+            }
+
+            // 3. BUENAS TARDES (LSEC): Descenso suave en ángulo diagonal (atardecer)
+            upper.contains("BUENAS TARDES") || upper.contains("TARDES") -> {
+                val cycle = (sin(t.toDouble() * 2.6)).toFloat()
+                val moveX = cycle * 0.18f
+                val moveY = -Math.abs(cycle) * 0.16f
+                val incline = (sin(t.toDouble() * 2.6) * 14.0).toFloat()
+                Matrix.translateM(matrix, 0, moveX, moveY, 0f)
+                Matrix.rotateM(matrix, 0, incline, 1f, 0f, 0.5f)
+            }
+
+            // 4. BUENAS NOCHES (LSEC): Cobertura envolvente hacia abajo (noche)
+            upper.contains("BUENAS NOCHES") || upper.contains("NOCHES") -> {
+                val cycle = (sin(t.toDouble() * 2.4)).toFloat()
+                val dipY = -Math.abs(cycle) * 0.20f
+                val foldX = (cycle * 22.0).toFloat()
+                Matrix.translateM(matrix, 0, 0f, dipY, 0f)
+                Matrix.rotateM(matrix, 0, foldX, 1f, 0f, 0f)
+            }
+
+            // 5. CHAO / ADIÓS (LSEC): Despedida oscilante rápida
+            upper.contains("CHAO") || upper.contains("ADIÓS") || upper.contains("ADIOS") -> {
+                val waveZ = (sin(t.toDouble() * 5.2) * 22.0).toFloat()
+                Matrix.rotateM(matrix, 0, waveZ, 0f, 0f, 1f)
+            }
+
+            // 6. ¿CÓMO ESTÁS? (LSEC): Giro interrogativo con palma hacia arriba
+            upper.contains("ESTAS") || upper.contains("ESTÁS") || upper.contains("COMO") -> {
+                val rockY = (sin(t.toDouble() * 3.5) * 24.0).toFloat()
+                val tiltX = (cos(t.toDouble() * 3.5) * 12.0).toFloat()
+                Matrix.rotateM(matrix, 0, tiltX, 1f, 0f, 0f)
+                Matrix.rotateM(matrix, 0, rockY, 0f, 1f, 0f)
+            }
+
+            // 7. MUCHO GUSTO (LSEC): Frotación circular armónica sobre el pecho
+            upper.contains("GUSTO") -> {
+                val cx = (cos(t.toDouble() * 3.2) * 0.14).toFloat()
+                val cy = (sin(t.toDouble() * 3.2) * 0.14).toFloat()
+                Matrix.translateM(matrix, 0, cx, cy, 0f)
+            }
+
+            // 8. GRACIAS (LSEC): Extensión suave desde la barbilla hacia el frente
             upper.contains("GRACIAS") -> {
-                // Seña GRACIAS: Inclinación frontal suave
-                val dipX = (sin(t.toDouble() * 3.0) * 16.0).toFloat()
-                val moveZ = (sin(t.toDouble() * 3.0) * 0.20).toFloat()
+                val cycle = (sin(t.toDouble() * 3.0)).toFloat()
+                val moveZ = (cycle * 0.28).toFloat()
+                val dipX = (cycle * 18.0).toFloat()
                 Matrix.translateM(matrix, 0, 0f, 0f, moveZ)
                 Matrix.rotateM(matrix, 0, dipX, 1f, 0f, 0f)
             }
+
+            // 9. POR FAVOR (LSEC): Movimiento en el centro del pecho
             upper.contains("POR-FAVOR") || upper.contains("FAVOR") -> {
-                // Seña POR FAVOR: Círculo cordial en el pecho
-                val cx = (sin(t.toDouble() * 2.8) * 0.12).toFloat()
-                val cy = (sin(t.toDouble() * 2.8 + 1.57) * 0.12).toFloat()
+                val cy = (sin(t.toDouble() * 2.8) * 0.12).toFloat()
+                val cx = (cos(t.toDouble() * 2.8) * 0.08).toFloat()
                 Matrix.translateM(matrix, 0, cx, cy, 0f)
             }
-            upper.contains("AYUDAR") || upper.contains("AYUDA") -> {
-                // Seña AYUDA: Impulso hacia adelante
-                val pushZ = (sin(t.toDouble() * 3.2) * 0.28).toFloat()
-                Matrix.translateM(matrix, 0, 0f, 0f, pushZ)
+
+            // 10. DE NADA (LSEC): Desprendimiento hacia adelante
+            upper.contains("DE NADA") || upper.contains("NADA") -> {
+                val cycle = (sin(t.toDouble() * 3.2)).toFloat()
+                val moveZ = cycle * 0.24f
+                val rotY = cycle * 14.0f
+                Matrix.translateM(matrix, 0, 0f, 0f, moveZ)
+                Matrix.rotateM(matrix, 0, rotY, 0f, 1f, 0f)
             }
-            upper.contains("SI") -> {
-                // Seña SÍ: Inflexión afirmativa
-                val nodX = (sin(t.toDouble() * 4.5) * 20.0).toFloat()
+
+            // 11. AYUDA (LSEC): Impulso vertical y frontal hacia arriba
+            upper.contains("AYUDAR") || upper.contains("AYUDA") -> {
+                val pushY = (sin(t.toDouble() * 3.4) * 0.22).toFloat()
+                val pushZ = (sin(t.toDouble() * 3.4) * 0.18).toFloat()
+                Matrix.translateM(matrix, 0, 0f, pushY, pushZ)
+            }
+
+            // 12. SÍ (AFIRMACIÓN - LSEC): Asentimiento vertical
+            upper.contains("SI") || upper.contains("SÍ") -> {
+                val nodX = (sin(t.toDouble() * 4.8) * 22.0).toFloat()
                 Matrix.rotateM(matrix, 0, nodX, 1f, 0f, 0f)
             }
+
+            // 13. NO (NEGACIÓN - LSEC): Negación horizontal pendular
             upper.contains("NO") -> {
-                // Seña NO: Negación lateral
-                val shakeY = (sin(t.toDouble() * 5.5) * 18.0).toFloat()
+                val shakeY = (sin(t.toDouble() * 5.6) * 20.0).toFloat()
                 Matrix.rotateM(matrix, 0, shakeY, 0f, 1f, 0f)
             }
+
+            // 14. TE QUIERO / AMOR (LSEC): Pulsación y acercamiento
+            upper.contains("QUIERO") || upper.contains("AMOR") -> {
+                val pulse = (sin(t.toDouble() * 3.8) * 0.15).toFloat()
+                Matrix.translateM(matrix, 0, 0f, 0f, pulse)
+            }
+
             else -> {
-                // Respiración y flotación sutil
+                // Flotación y respiración sutil
                 val breathY = (sin(t.toDouble() * 1.8) * 0.05).toFloat()
                 Matrix.translateM(matrix, 0, 0f, breathY, 0f)
             }
