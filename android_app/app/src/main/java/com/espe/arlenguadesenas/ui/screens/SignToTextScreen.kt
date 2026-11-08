@@ -72,7 +72,7 @@ fun SignToTextScreen(
 
     val handAnalyzer = remember(context) {
         HandLandmarkerHelper(context, isFrontCamera = useFrontCamera) { _, predictedSign, prob, _ ->
-            if (prob > 0.60f) {
+            if (prob >= 0.50f) {
                 val smoothed = votingBuffer.addPrediction(predictedSign)
                 detectedGloss = smoothed
                 confidence = prob
