@@ -6,7 +6,8 @@ class LsecGlossMapper:
     """
     Traductor de lenguaje natural (Español oral/escrito) a glosas de la LSEC.
     Aplica lematización básica, supresión de elementos gramaticales vacíos y
-    reordenamiento viso-espacial característico de la lengua de señas ecuatoriana.
+    reordenamiento viso-espacial característico de la lengua de señas ecuatoriana
+    conforme al Diccionario CONADIS (Gabriel Román) y corpus de GioSEÑAS.
     """
 
     STOPWORDS_SPANISH = {
@@ -28,8 +29,12 @@ class LsecGlossMapper:
         'muchas gracias': 'GRACIAS MUCHO',
         'muchas': 'MUCHO',
         'mucho': 'MUCHO',
+        'mucho gusto': 'MUCHO GUSTO',
+        'gusto': 'GUSTO',
         'por favor': 'POR-FAVOR',
         'favor': 'POR-FAVOR',
+        'de nada': 'DE-NADA',
+        'nada': 'DE-NADA',
         'adios': 'CHAO',
         'chao': 'CHAO',
         'ayuda': 'AYUDAR',
@@ -38,6 +43,7 @@ class LsecGlossMapper:
         'sanitario': 'BANO',
         'necesito': 'NECESITAR',
         'quiero': 'QUERER',
+        'te quiero': 'QUERER',
         'profesor': 'PROFESOR',
         'docente': 'PROFESOR',
         'maestro': 'PROFESOR',
@@ -51,7 +57,10 @@ class LsecGlossMapper:
         'donde': 'DONDE',
         'esta': 'ESTAR',
         'universidad': 'UNIVERSIDAD',
-        'espe': 'UNIVERSIDAD ESPE'
+        'espe': 'UNIVERSIDAD ESPE',
+        'mama': 'MAMA',
+        'papa': 'PAPA',
+        'familia': 'FAMILIA'
     }
 
     def __init__(self):
@@ -99,14 +108,16 @@ class LsecGlossMapper:
 
         return glosses
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     mapper = LsecGlossMapper()
-    ejemplos = [
+    test_cases = [
         "Hola, buenos días",
         "Muchas gracias por favor",
         "No entiendo la clase",
         "¿Dónde está el baño?",
-        "Profesor necesito ayuda"
+        "Profesor necesito ayuda",
+        "Mucho gusto y hasta luego",
+        "¿Cómo estás? Buenas tardes"
     ]
-    for ej in ejemplos:
-        print(f"'{ej}' ➔ {mapper.translate_to_glosses(ej)}")
+    for case in test_cases:
+        print(f"'{case}' ➔ {mapper.translate_to_glosses(case)}")
