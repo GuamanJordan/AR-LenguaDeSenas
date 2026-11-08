@@ -26,11 +26,11 @@ fun TextToSignArScreen() {
     var speed by remember { mutableStateOf(1.0f) }
 
     val quickSigns = remember {
-        listOf("HOLA", "GRACIAS", "POR-FAVOR", "AYUDA", "SI", "NO", "A", "B", "C", "1", "2")
+        listOf("HOLA", "GRACIAS", "POR-FAVOR", "AYUDA", "SI", "NO", "LETRA A", "LETRA B", "NÚMERO 1", "NÚMERO 2")
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // 1. Renderizador 3D Interactivo 360°
+        // 1. Renderizador 3D Interactivo 360° (Mano Humana Orgánica)
         ArViewContainer(
             activeGloss = activeGloss,
             isPlaying = isPlaying,
@@ -38,33 +38,36 @@ fun TextToSignArScreen() {
             modifier = Modifier.fillMaxSize()
         )
 
-        // 2. Panel Superior: Título, Controles y Sugerencia de Rotación
+        // 2. Barra Superior Estilizada y Compacta
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .background(Color(0xCC000000))
-                .padding(top = 12.dp, bottom = 8.dp, start = 12.dp, end = 12.dp),
+                .background(Color(0xEE12141A))
+                .padding(top = 10.dp, bottom = 6.dp, start = 12.dp, end = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Mano 3D LSEC: $activeGloss",
-                style = MaterialTheme.typography.titleLarge,
-                color = Color(0xFF64B5F6)
-            )
-
-            // Indicador de control 360°
-            Surface(
-                color = Color(0x66FFFFFF),
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.padding(vertical = 4.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "👆 Arrastra para rotar 360° | Pellizca para zoom",
-                    color = Color.White,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp)
+                    text = "Mano 3D: $activeGloss",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFFFFCC80) // Tono cálido acorde a piel humana
                 )
+                Surface(
+                    color = Color(0x33FFFFFF),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = "👆 360° táctil",
+                        color = Color.White,
+                        fontSize = 11.sp,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
+                }
             }
 
             AvatarControlsBar(
@@ -78,18 +81,18 @@ fun TextToSignArScreen() {
                 onSpeedChange = { speed = it }
             )
 
-            // Fila de botones rápidos de prueba
+            // Atajos de señas rápidas
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState())
-                    .padding(top = 4.dp),
+                    .padding(vertical = 4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 quickSigns.forEach { sign ->
                     Surface(
                         shape = RoundedCornerShape(8.dp),
-                        color = if (activeGloss == sign) MaterialTheme.colorScheme.primary else Color(0x33FFFFFF),
+                        color = if (activeGloss == sign) MaterialTheme.colorScheme.primary else Color(0x22FFFFFF),
                         modifier = Modifier.clickable {
                             activeGloss = sign
                             isPlaying = true
@@ -98,15 +101,15 @@ fun TextToSignArScreen() {
                         Text(
                             text = sign,
                             color = Color.White,
-                            fontSize = 13.sp,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                         )
                     }
                 }
             }
         }
 
-        // 3. Barra Inferior de Entrada (Voz y Texto)
+        // 3. Barra Inferior de Entrada (Dictado por Voz y Escritura)
         SpeechInputBar(
             onSendText = { text ->
                 val clean = text.trim().uppercase()
@@ -122,7 +125,7 @@ fun TextToSignArScreen() {
                 isPlaying = true
             },
             onStartVoice = {
-                // Activar seña con entrada de voz
+                // Entrada por voz activa
             },
             modifier = Modifier.align(Alignment.BottomCenter)
         )
