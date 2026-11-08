@@ -21,10 +21,8 @@ class LsecRepositoryImpl(
         return glossDao.getGlossesByCategory(categoryId).map { list -> list.map { it.toDomain() } }
     }
 
-    override fun getGlossByCode(code: String): Gloss? {
-        return kotlinx.coroutines.runBlocking {
-            glossDao.getGlossByCode(code)?.toDomain()
-        }
+    override suspend fun getGlossByCode(code: String): Gloss? {
+        return glossDao.getGlossByCode(code)?.toDomain()
     }
 
     override suspend fun searchGlosses(query: String): List<Gloss> {
