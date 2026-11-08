@@ -29,7 +29,8 @@ class HandLandmarkerHelper(
 
     private var handLandmarker: HandLandmarker? = null
     private var isInitialized = false
-    private val neuralClassifier = LsecNeuralClassifier(context)
+    val neuralClassifier = LsecNeuralClassifier(context)
+    var trainingManager: LsecTrainingManager? = null
 
     private var lastAnalyzedTimeMs = 0L
     private val minFrameIntervalMs = 50L // ~20 FPS: óptimo para capturar transiciones de video
@@ -106,6 +107,9 @@ class HandLandmarkerHelper(
                     val handsCount = detectionResult.landmarks().size
                     val hand1 = extractLandmarks(detectionResult.landmarks()[0])
                     val hand2 = if (handsCount >= 2) extractLandmarks(detectionResult.landmarks()[1]) else null
+
+                    // Transmitir landmarks al estudio de calibración si la grabación de 5s está activa
+                    trainingManager?.onNewFrame(hand1, hand2)
 
                     val dt = if (prevTimestamp > 0) (currentTime - prevTimestamp) / 1000f else 0.05f
                     if (dt in 0.02f..0.30f) {
