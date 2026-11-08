@@ -1,13 +1,13 @@
 package com.espe.arlenguadesenas.ui.components
 
-import android.content.Context
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -19,7 +19,7 @@ import java.util.concurrent.Executors
 fun CameraPreview(
     modifier: Modifier = Modifier,
     useFrontCamera: Boolean = true,
-    onFrameAnalyzed: ((FloatArray) -> Unit)? = null
+    analyzer: ImageAnalysis.Analyzer? = null
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -45,19 +45,12 @@ fun CameraPreview(
                     CameraSelector.DEFAULT_BACK_CAMERA
                 }
 
-                val imageAnalysis = ImageAnalysis.Builder()
+                val analysisBuilder = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                    .build()
 
-                imageAnalysis.setAnalyzer(cameraExecutor) { imageProxy ->
-                    try {
-                        onFrameAnalyzed?.let { callback ->
-                            val syntheticLandmarks = FloatArray(63) { (Math.random() * 0.1).toFloat() }
-                            callback(syntheticLandmarks)
-                        }
-                    } finally {
-                        imageProxy.close()
-                    }
+                val imageAnalysis = analysisBuilder.build()
+                analyzer?.let {
+                    imageAnalysis.setAnalyzer(cameraExecutor, it)
                 }
 
                 try {
@@ -87,9 +80,23 @@ fun CameraPreview(
                 } else {
                     CameraSelector.DEFAULT_BACK_CAMERA
                 }
+
+                val imageAnalysis = ImageAnalysis.Builder()
+                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .build()
+
+                analyzer?.let {
+                    imageAnalysis.setAnalyzer(cameraExecutor, it)
+                }
+
                 try {
                     cameraProvider.unbindAll()
-                    cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
+                    cameraProvider.bindToLifecycle(
+                        lifecycleOwner,
+                        cameraSelector,
+                        preview,
+                        imageAnalysis
+                    )
                 } catch (e: Exception) {
                     e.printStackTrace()
                 }
