@@ -218,3 +218,4 @@ class Hand3DRenderer : GLSurfaceView.Renderer {
         }
     }
 }
+
