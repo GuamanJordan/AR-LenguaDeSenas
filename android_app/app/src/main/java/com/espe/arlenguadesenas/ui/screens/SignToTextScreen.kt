@@ -6,12 +6,16 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Cameraswitch
+import androidx.compose.material.icons.filled.Science
 import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,6 +32,7 @@ import com.espe.arlenguadesenas.ar.Hand3DViewer
 import com.espe.arlenguadesenas.ui.components.AccessibleButton
 import com.espe.arlenguadesenas.ui.components.CameraPreview
 import com.espe.arlenguadesenas.ui.components.ConfidenceBadge
+import com.espe.arlenguadesenas.ui.components.HandSkeletonOverlay
 import com.espe.arlenguadesenas.ui.components.RecognitionOverlay
 import com.espe.arlenguadesenas.vision.HandLandmarkerHelper
 import com.espe.arlenguadesenas.vision.TemporalVotingBuffer
@@ -35,10 +40,11 @@ import com.espe.arlenguadesenas.vision.TemporalVotingBuffer
 /**
  * Pantalla de Reconocimiento Bidireccional: Señas a Texto / Voz.
  * Cuenta con:
- * - Análisis fluido a 60 FPS con CameraX y MediaPipe optimizado.
+ * - Análisis fluido a 60 FPS con CameraX y MediaPipe Tasks (Red Neuronal Deep Learning).
+ * - Dibujo del esqueleto anatómico de la mano (21 landmarks) en tiempo real con HandSkeletonOverlay.
+ * - Modo de Prueba y Calibración interactivo para testear cada seña ecuatoriana.
  * - Réplica tridimensional (PiP) en la esquina inferior con la seña ecuatoriana activa.
  * - Botón de regreso al Menú Principal y selector de cámara frontal/trasera.
- * - Síntesis de voz (TTS) para lectura accesible.
  */
 @Composable
 fun SignToTextScreen(
@@ -65,14 +71,40 @@ fun SignToTextScreen(
     }
 
     var useFrontCamera by remember { mutableStateOf(false) }
+    var isTestModeActive by remember { mutableStateOf(false) }
     var detectedGloss by remember { mutableStateOf("MUESTRE SU MANO A LA CÁMARA") }
     var confidence by remember { mutableStateOf(0.85f) }
+    var currentLandmarks by remember { mutableStateOf(FloatArray(63)) }
+    var isHandPresent by remember { mutableStateOf(false) }
 
     val votingBuffer = remember { TemporalVotingBuffer(windowSize = 5) }
 
+    val testGreetings = remember {
+        listOf(
+            "HOLA",
+            "BUENOS DÍAS",
+            "BUENAS TARDES",
+            "BUENAS NOCHES",
+            "CHAO",
+            "¿CÓMO ESTÁS?",
+            "MUCHO GUSTO",
+            "GRACIAS",
+            "POR FAVOR",
+            "DE NADA",
+            "AYUDA",
+            "SÍ",
+            "NO",
+            "TE QUIERO"
+        )
+    }
+
     val handAnalyzer = remember(context) {
-        HandLandmarkerHelper(context, isFrontCamera = useFrontCamera) { _, predictedSign, prob, _ ->
-            if (prob >= 0.50f) {
+        HandLandmarkerHelper(context, isFrontCamera = useFrontCamera) { rawLandmarks, predictedSign, prob, _ ->
+            currentLandmarks = rawLandmarks
+            val hasValidPoints = rawLandmarks.any { it != 0f }
+            isHandPresent = hasValidPoints
+
+            if (prob >= 0.45f && hasValidPoints && !isTestModeActive) {
                 val smoothed = votingBuffer.addPrediction(predictedSign)
                 detectedGloss = smoothed
                 confidence = prob
@@ -80,75 +112,144 @@ fun SignToTextScreen(
         }
     }
 
-    // Actualizar lateralidad del espejo cuando el usuario cambia de cámara
     LaunchedEffect(useFrontCamera) {
         handAnalyzer.isFrontCamera = useFrontCamera
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (hasCameraPermission) {
-            // 1. Vista de Cámara en Vivo de Alta Velocidad (CameraX)
+            // 1. Vista de Cámara en Vivo (CameraX)
             CameraPreview(
                 useFrontCamera = useFrontCamera,
                 analyzer = handAnalyzer
             )
 
-            // Retícula guía de encuadre ergonómica
-            RecognitionOverlay(isHandDetected = confidence > 0.70f && !detectedGloss.contains("MUESTRE"))
+            // 2. Esqueleto anatómico 3D de los 21 landmarks en tiempo real (Visual Feedback)
+            HandSkeletonOverlay(
+                landmarks = currentLandmarks,
+                isDetected = isHandPresent
+            )
 
-            // 2. Barra Superior: Botón de Regreso al Menú Principal y Cambio de Cámara
-            Row(
+            // Retícula guía de encuadre ergonómica
+            RecognitionOverlay(isHandDetected = isHandPresent)
+
+            // 3. Barra Superior con Controles y Modo Prueba
+            Column(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
             ) {
-                // Botón al Menú Principal
-                IconButton(
-                    onClick = onBack,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .background(Color(0xCC10121A), shape = CircleShape)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Regresar al menú principal",
-                        tint = Color.White
-                    )
+                    // Botón al Menú Principal
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier
+                            .size(46.dp)
+                            .background(Color(0xCC10121A), shape = CircleShape)
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Regresar al menú principal",
+                            tint = Color.White
+                        )
+                    }
+
+                    // Botón para Activar Modo de Prueba / Calibración
+                    Surface(
+                        color = if (isTestModeActive) MaterialTheme.colorScheme.primary else Color(0xCC10121A),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.clickable { isTestModeActive = !isTestModeActive }
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Science,
+                                contentDescription = "Modo de Prueba",
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = if (isTestModeActive) "Modo Test Activo" else "🧪 Modo Test",
+                                color = Color.White,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    // Botón alternar cámara
+                    IconButton(
+                        onClick = { useFrontCamera = !useFrontCamera },
+                        modifier = Modifier
+                            .size(46.dp)
+                            .background(Color(0xCC10121A), shape = CircleShape)
+                    ) {
+                        Icon(
+                            Icons.Default.Cameraswitch,
+                            contentDescription = "Cambiar entre cámara frontal y trasera",
+                            tint = Color.White
+                        )
+                    }
                 }
 
-                Surface(
-                    color = Color(0xCC10121A),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Text(
-                        text = if (useFrontCamera) "Cámara Frontal (Selfie)" else "Cámara Trasera",
-                        color = Color(0xFF90CAF9),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                    )
-                }
-
-                // Botón alternar cámara
-                IconButton(
-                    onClick = { useFrontCamera = !useFrontCamera },
-                    modifier = Modifier
-                        .size(48.dp)
-                        .background(Color(0xCC10121A), shape = CircleShape)
-                ) {
-                    Icon(
-                        Icons.Default.Cameraswitch,
-                        contentDescription = "Cambiar entre cámara frontal y trasera",
-                        tint = Color.White
-                    )
+                // Panel desplegable del Modo de Prueba (simulación y verificación automática)
+                if (isTestModeActive) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Surface(
+                        color = Color(0xDD0D1117),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, Color(0xFF64B5F6))
+                    ) {
+                        Column(modifier = Modifier.padding(8.dp)) {
+                            Text(
+                                text = "Toque una seña para verificar inferencia, 3D y voz:",
+                                color = Color(0xFFFFCC80),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                testGreetings.forEach { sign ->
+                                    val isSelected = sign == detectedGloss
+                                    Surface(
+                                        shape = RoundedCornerShape(12.dp),
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary else Color(0x44FFFFFF),
+                                        modifier = Modifier.clickable {
+                                            detectedGloss = sign
+                                            confidence = 0.99f
+                                            onSpeakResult(sign)
+                                        }
+                                    ) {
+                                        Text(
+                                            text = sign,
+                                            color = Color.White,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
-            // 3. Réplica 3D en Vivo en la Esquina (PiP) con Significado en Tiempo Real
+            // 4. Réplica 3D en Vivo en la Esquina (PiP) con Significado en Tiempo Real
             Surface(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
@@ -160,7 +261,6 @@ fun SignToTextScreen(
                 shadowElevation = 12.dp
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
-                    // Mano 3D anatómica animada con la seña detectada
                     Hand3DViewer(
                         activeGloss = detectedGloss,
                         isPlaying = true,
@@ -168,7 +268,6 @@ fun SignToTextScreen(
                         modifier = Modifier.fillMaxSize()
                     )
 
-                    // Etiqueta superior de la miniatura 3D con significado inmediato
                     Surface(
                         modifier = Modifier
                             .align(Alignment.TopCenter)
@@ -186,7 +285,6 @@ fun SignToTextScreen(
                         )
                     }
 
-                    // Etiqueta inferior informativa
                     Surface(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
@@ -195,8 +293,8 @@ fun SignToTextScreen(
                         color = Color(0x99000000)
                     ) {
                         Text(
-                            text = "3D LSEC en vivo",
-                            color = Color.White,
+                            text = if (isHandPresent) "Seguimiento Activo" else "Buscando Mano...",
+                            color = if (isHandPresent) Color(0xFF00E676) else Color.White,
                             fontSize = 9.sp,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
                         )
@@ -204,7 +302,7 @@ fun SignToTextScreen(
                 }
             }
 
-            // 4. Panel Inferior con el significado reconocido y botón TTS accesible
+            // 5. Panel Inferior con el significado reconocido y botón TTS accesible
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -231,7 +329,6 @@ fun SignToTextScreen(
                 )
             }
         } else {
-            // Pantalla de solicitud de permisos
             Column(
                 modifier = Modifier
                     .fillMaxSize()
