@@ -52,9 +52,9 @@ class HandLandmarkerHelper(
 
             val options = HandLandmarker.HandLandmarkerOptions.builder()
                 .setBaseOptions(baseOptions)
-                .setMinHandDetectionConfidence(0.35f)
-                .setMinTrackingConfidence(0.35f)
-                .setMinHandPresenceConfidence(0.35f)
+                .setMinHandDetectionConfidence(0.25f)
+                .setMinTrackingConfidence(0.25f)
+                .setMinHandPresenceConfidence(0.25f)
                 .setNumHands(2)
                 .setRunningMode(RunningMode.IMAGE)
                 .build()
